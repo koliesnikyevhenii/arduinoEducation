@@ -1,0 +1,25 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: iot-rabbit
+    ports:
+      - "5672:5672"     # AMQP — the .NET consumer connects here
+      - "15672:15672"   # management UI — http://localhost:15672 (guest/guest)
+      - "1883:1883"     # MQTT — the ESP32 publishes here
+    volumes:
+      # enable the management + mqtt plugins
+      - ./rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
+
+  postgres:
+    image: postgres:16
+    container_name: iot-pg
+    environment:
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: telemetry
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
