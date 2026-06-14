@@ -48,6 +48,22 @@ To let an ESP32 on the network publish, create a separate user
 (management UI -> Admin -> Add user), e.g. `esp` / `esp-pass`, and grant
 it permissions on vhost `/`. Use those credentials in the firmware.
 
+## Simulating a device (no hardware)
+
+`simulator/` is a small .NET console app that publishes fake readings over MQTT
+(port 1883) just like the ESP32 would — topic `sensors/<device>/<metric>`, body a
+bare number. Use it to drive the whole flow without the UI or hardware.
+
+```bash
+cd simulator
+dotnet run                                # every 2s, forever (Ctrl+C to stop)
+dotnet run -- --interval 1000 --count 20  # 20 messages, 1/sec, then stop
+```
+
+Options: `--host` (default `localhost`), `--port` (`1883`), `--user`/`--pass`
+(`guest`/`guest` — works from localhost), `--interval` ms, `--count` (0 = endless).
+Watch the readings arrive via `GET /api/telemetry/latest` or `/api/telemetry/devices`.
+
 ## Where to extend next
 
 - `TelemetryConsumer.ParseReading` — the payload format (switch to JSON).

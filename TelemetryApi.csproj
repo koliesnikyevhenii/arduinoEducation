@@ -8,6 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The simulator is a separate console project; don't compile it into the API.
+         (Sdk.Web globs all *.cs under the project dir recursively by default.) -->
+    <Compile Remove="simulator/**/*.cs" />
+    <Content Remove="simulator/**/*" />
+    <None Remove="simulator/**/*" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- PostgreSQL provider for EF Core -->
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.*" />
     <!-- migrations / dotnet ef -->
