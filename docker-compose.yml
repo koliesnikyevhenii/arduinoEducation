@@ -14,10 +14,10 @@ services:
     image: postgres:16
     container_name: iot-pg
     environment:
-      POSTGRES_PASSWORD: secret
-      POSTGRES_DB: telemetry
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "5433:5432"   # host 5433 -> container 5432 (5432 is taken by a native Postgres install)
     volumes:
       - pgdata:/var/lib/postgresql/data
 
