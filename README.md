@@ -4,8 +4,10 @@ Backend for IoT telemetry:
 
 ```
 ESP32 --MQTT--> RabbitMQ (rabbitmq_mqtt plugin) --AMQP--> TelemetryConsumer --> PostgreSQL
+                                                                |
+                                                          SignalR hub --> React dashboard (pitch/roll)
                                                                 ↕
-                                                  ASP.NET Core API --> (later) React
+                                                          ASP.NET Core read API
 ```
 
 ## Running the infrastructure
@@ -61,15 +63,45 @@ dotnet run -- --interval 1000 --count 20  # 20 messages, 1/sec, then stop
 ```
 
 Options: `--host` (default `localhost`), `--port` (`1883`), `--user`/`--pass`
-(`guest`/`guest` — works from localhost), `--interval` ms, `--count` (0 = endless).
+(`guest`/`guest` — works from localhost), `--interval` ms (default `500`),
+`--count` (0 = endless).
 Watch the readings arrive via `GET /api/telemetry/latest` or `/api/telemetry/devices`.
+
+The simulator publishes `esp32/pitch` and `esp32/roll` (swinging ±90°) alongside the
+room temperature/humidity series, so the pitch/roll dashboard below has live data with
+no ESP32 attached.
+
+## Real-time dashboard (Pitch / Roll — MPU6050 lesson)
+
+The ESP32 MPU6050 lesson publishes tilt as two ordinary metrics —
+`sensors/esp32/pitch` and `sensors/esp32/roll`, each a bare number. The backend needs
+**no special handling**: `TelemetryConsumer` ingests them like any other metric and, after
+the DB write, pushes each reading to connected browsers over a SignalR hub at
+`/hub/telemetry`. The React app filters device `esp32` / metrics `pitch`,`roll` and draws
+two live gauges plus a rolling chart — near real-time.
+
+```bash
+cd dashboard
+npm install     # first time only
+npm run dev     # http://localhost:5173
+```
+
+The dashboard reads the API base URL from `dashboard/.env` (`VITE_API_URL`, default
+`http://localhost:54344` — the API's HTTP dev endpoint). It relies on the `react` CORS
+policy, which allows origin `http://localhost:5173` **with credentials** (required for the
+SignalR WebSocket handshake).
+
+To see it end-to-end: `docker compose up -d`, run the API (`dotnet run`), start the
+dashboard (`npm run dev`), then drive data with `cd simulator && dotnet run` (or the real
+ESP32 running lesson 20).
 
 ## Where to extend next
 
 - `TelemetryConsumer.ParseReading` — the payload format (switch to JSON).
 - `Domain/SensorReading` — add fields (qos, raw payload in jsonb).
-- `Api/TelemetryEndpoints` — aggregates (hourly average), pagination, SignalR
-  for pushing fresh data to React in real time.
+- `Api/TelemetryEndpoints` — aggregates (hourly average), pagination.
+- SignalR push is live (`TelemetryHub`, `/hub/telemetry`). Next: per-device hub groups
+  so a client subscribes to one device instead of filtering all readings client-side.
 - A dead-letter exchange for malformed messages.
 - For high write volumes — batching instead of SaveChanges per message,
   or adopting TimescaleDB.

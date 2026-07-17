@@ -1,7 +1,9 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using TelemetryApi.Api;
 using TelemetryApi.Data;
 using TelemetryApi.Messaging;
+using TelemetryApi.Realtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,13 +17,22 @@ builder.Services.Configure<RabbitMqOptions>(
     builder.Configuration.GetSection(RabbitMqOptions.SectionName));
 builder.Services.AddHostedService<TelemetryConsumer>();
 
-// --- API + Swagger + CORS for the future React app (Vite dev server) ---
+// --- SignalR: pushes freshly-ingested readings (e.g. pitch/roll) to the dashboard ---
+// camelCase so the TS client sees { device, metric, value, recordedAt }.
+builder.Services.AddSignalR()
+    .AddJsonProtocol(o =>
+        o.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase);
+
+// --- API + Swagger + CORS for the React app (Vite dev server) ---
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+// SignalR's WebSocket handshake sends credentials, so the policy needs
+// AllowCredentials() — which requires an explicit origin (no AllowAnyOrigin).
 builder.Services.AddCors(o => o.AddPolicy("react", p =>
     p.WithOrigins("http://localhost:5173")
      .AllowAnyHeader()
-     .AllowAnyMethod()));
+     .AllowAnyMethod()
+     .AllowCredentials()));
 
 var app = builder.Build();
 
@@ -41,5 +52,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("react");
 app.MapTelemetryEndpoints();
+app.MapHub<TelemetryHub>("/hub/telemetry");
 
 app.Run();

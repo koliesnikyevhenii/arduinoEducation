@@ -9,7 +9,7 @@ using MQTTnet.Client;
 // the real device: topic "sensors/<device>/<metric>", payload a bare number.
 //
 // Usage (from the simulator/ folder):
-//   dotnet run                                  # every 2s, forever, default devices
+//   dotnet run                                  # every 500ms, forever, default devices
 //   dotnet run -- --interval 1000 --count 20    # 20 messages, one per second, then stop
 //   dotnet run -- --host localhost --port 1883 --user guest --pass guest
 //
@@ -25,6 +25,11 @@ var series = new List<Series>
     new("livingroom", "humidity",    value: 45.0, min: 35, max: 60, step: 0.8),
     new("kitchen",    "temperature", value: 23.5, min: 19, max: 28, step: 0.3),
     new("bedroom",    "temperature", value: 20.5, min: 17, max: 24, step: 0.3),
+
+    // MPU6050 tilt (lesson 20) — same "esp32" device the firmware uses.
+    // Wide swings so the dashboard's Pitch/Roll gauges visibly move.
+    new("esp32", "pitch", value: 0.0, min: -90, max: 90, step: 6),
+    new("esp32", "roll",  value: 0.0, min: -90, max: 90, step: 6),
 };
 
 var factory = new MqttFactory();
@@ -133,7 +138,7 @@ internal sealed record SimOptions(string Host, int Port, string User, string Pas
         int port = 1883;
         string user = "guest";
         string pass = "guest";
-        int interval = 2000;
+        int interval = 500;   // lively enough for the near-real-time pitch/roll dashboard
         int count = 0; // 0 = endless
 
         for (var i = 0; i < args.Length - 1; i++)

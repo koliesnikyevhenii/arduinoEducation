@@ -13,6 +13,11 @@
     <Compile Remove="simulator/**/*.cs" />
     <Content Remove="simulator/**/*" />
     <None Remove="simulator/**/*" />
+
+    <!-- The React dashboard lives in dashboard/ (Vite dev server on :5173). It has no
+         .cs, but keep the Web SDK from scanning node_modules/dist as build content. -->
+    <Content Remove="dashboard/**/*" />
+    <None Remove="dashboard/**/*" />
   </ItemGroup>
 
   <ItemGroup>

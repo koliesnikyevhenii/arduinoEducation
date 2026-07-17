@@ -1,0 +1,151 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b1220;
+  --panel: #0f172a;
+  --border: #1e293b;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+
+.app__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.app__header h1 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.status__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.status--connected .status__dot {
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+}
+.status--connected {
+  color: #22c55e;
+}
+.status--reconnecting .status__dot,
+.status--connecting .status__dot {
+  background: #eab308;
+}
+.status--disconnected .status__dot {
+  background: #ef4444;
+}
+.status--disconnected {
+  color: #ef4444;
+}
+
+.gauges {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 560px) {
+  .gauges {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gauge {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gauge__label {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.gauge__dial {
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  margin: 8px 0;
+}
+
+.gauge__face {
+  fill: #0b1424;
+  stroke: var(--border);
+  stroke-width: 2;
+}
+.gauge__tick {
+  stroke: #334155;
+  stroke-width: 2;
+}
+.gauge__level {
+  stroke: #1e293b;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+}
+
+.gauge__value {
+  font-size: 34px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 12px;
+}
+
+.app__footer {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+code {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 0.9em;
+}
