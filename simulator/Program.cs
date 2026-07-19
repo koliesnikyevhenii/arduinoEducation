@@ -30,6 +30,9 @@ var series = new List<Series>
     // Wide swings so the dashboard's Pitch/Roll gauges visibly move.
     new("esp32", "pitch", value: 0.0, min: -90, max: 90, step: 6),
     new("esp32", "roll",  value: 0.0, min: -90, max: 90, step: 6),
+    // yaw = heading (gyro-integrated on the device). Full turn range so the
+    // 3D car visibly rotates about its vertical axis.
+    new("esp32", "yaw",   value: 0.0, min: -180, max: 180, step: 8),
 };
 
 var factory = new MqttFactory();

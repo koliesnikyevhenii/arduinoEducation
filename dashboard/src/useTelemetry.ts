@@ -30,21 +30,27 @@ interface UseTelemetry {
   metrics?: string[];
 }
 
+type LatestValues = { pitch: number | null; roll: number | null; yaw: number | null };
+
 /**
  * Subscribes to the API's SignalR hub and keeps the latest pitch/roll plus a
  * rolling window of history for the given device. Pitch and roll arrive as
  * separate messages, so each message appends a point carrying the newest value
  * of both.
  */
-export function useTelemetry(apiUrl: string, { device, metrics = ["pitch", "roll"] }: UseTelemetry) {
+export function useTelemetry(
+  apiUrl: string,
+  { device, metrics = ["pitch", "roll", "yaw"] }: UseTelemetry
+) {
   const [state, setState] = useState<ConnState>("connecting");
   const [pitch, setPitch] = useState<number | null>(null);
   const [roll, setRoll] = useState<number | null>(null);
+  const [yaw, setYaw] = useState<number | null>(null);
   const [history, setHistory] = useState<TiltPoint[]>([]);
 
   // Newest values held in a ref so the SignalR handler (registered once) always
   // sees current state without re-subscribing on every reading.
-  const latest = useRef<{ pitch: number | null; roll: number | null }>({ pitch: null, roll: null });
+  const latest = useRef<LatestValues>({ pitch: null, roll: null, yaw: null });
 
   useEffect(() => {
     const connection: HubConnection = new HubConnectionBuilder()
@@ -62,6 +68,9 @@ export function useTelemetry(apiUrl: string, { device, metrics = ["pitch", "roll
       } else if (r.metric === "roll") {
         latest.current.roll = r.value;
         setRoll(r.value);
+      } else if (r.metric === "yaw") {
+        latest.current.yaw = r.value;
+        setYaw(r.value);
       }
 
       const point: TiltPoint = {
@@ -90,5 +99,5 @@ export function useTelemetry(apiUrl: string, { device, metrics = ["pitch", "roll
     };
   }, [apiUrl, device, metrics.join(",")]);
 
-  return { state, pitch, roll, history };
+  return { state, pitch, roll, yaw, history };
 }

@@ -8,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { CarModel } from "./CarModel";
 import { TiltGauge } from "./TiltGauge";
 import { useTelemetry, type ConnState } from "./useTelemetry";
 
@@ -24,7 +25,7 @@ const STATUS_TEXT: Record<ConnState, string> = {
 };
 
 export function App() {
-  const { state, pitch, roll, history } = useTelemetry(API_URL, { device: DEVICE });
+  const { state, pitch, roll, yaw, history } = useTelemetry(API_URL, { device: DEVICE });
 
   return (
     <div className="app">
@@ -78,6 +79,19 @@ export function App() {
             />
           </LineChart>
         </ResponsiveContainer>
+      </section>
+
+      <section className="model">
+        <div className="model__title">
+          <span>Robot orientation (drag to orbit)</span>
+          <span className="model__heading">
+            heading {yaw !== null ? `${yaw.toFixed(0)}°` : "—"}
+            <span className="model__hint"> · gyro-only, drifts over time</span>
+          </span>
+        </div>
+        <div className="model__canvas">
+          <CarModel pitch={pitch} roll={roll} yaw={yaw} />
+        </div>
       </section>
 
       <footer className="app__footer">

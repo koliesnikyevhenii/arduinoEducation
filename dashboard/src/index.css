@@ -135,6 +135,51 @@ body {
   padding: 16px 12px;
 }
 
+.model {
+  margin-top: 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.model__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.model__heading {
+  font-variant-numeric: tabular-nums;
+  color: #cbd5e1;
+}
+
+.model__hint {
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.model__canvas {
+  height: 360px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 30%, #101c30, #0b1220 70%);
+  cursor: grab;
+}
+
+.model__canvas:active {
+  cursor: grabbing;
+}
+
 .app__footer {
   margin-top: 20px;
   text-align: center;
