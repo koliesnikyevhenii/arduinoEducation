@@ -70,6 +70,75 @@ body {
   color: #ef4444;
 }
 
+.drive {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 24px;
+}
+
+.drive__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.drive__active {
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.pad {
+  display: grid;
+  grid-template-areas:
+    ".    up    ."
+    "left stop  right"
+    ".    down  .";
+  grid-template-columns: repeat(3, 72px);
+  grid-template-rows: repeat(3, 72px);
+  gap: 10px;
+  justify-content: center;
+}
+
+.pad__btn {
+  font-size: 26px;
+  color: var(--text);
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+  transition: background 80ms, transform 80ms;
+}
+
+.pad__btn:hover {
+  background: #273449;
+}
+
+.pad__btn--active {
+  background: #38bdf8;
+  color: #0b1220;
+  transform: scale(0.94);
+}
+
+.pad__btn--stop {
+  color: #f87171;
+  font-size: 22px;
+}
+
+.pad__btn--stop:hover {
+  background: #3a2530;
+}
+
 .gauges {
   display: grid;
   grid-template-columns: 1fr 1fr;

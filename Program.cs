@@ -17,6 +17,9 @@ builder.Services.Configure<RabbitMqOptions>(
     builder.Configuration.GetSection(RabbitMqOptions.SectionName));
 builder.Services.AddHostedService<TelemetryConsumer>();
 
+// --- Robot command dispatch (browser -> broker -> ESP32). Not telemetry. ---
+builder.Services.AddSingleton<RobotCommandPublisher>();
+
 // --- SignalR: pushes freshly-ingested readings (e.g. pitch/roll) to the dashboard ---
 // camelCase so the TS client sees { device, metric, value, recordedAt }.
 builder.Services.AddSignalR()
@@ -52,6 +55,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("react");
 app.MapTelemetryEndpoints();
+app.MapRobotEndpoints();
 app.MapHub<TelemetryHub>("/hub/telemetry");
 
 app.Run();

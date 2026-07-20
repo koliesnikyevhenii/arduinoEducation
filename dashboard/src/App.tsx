@@ -9,6 +9,7 @@ import {
   YAxis,
 } from "recharts";
 import { CarModel } from "./CarModel";
+import { RobotControl } from "./RobotControl";
 import { TiltGauge } from "./TiltGauge";
 import { useTelemetry, type ConnState } from "./useTelemetry";
 
@@ -36,6 +37,8 @@ export function App() {
           {STATUS_TEXT[state]}
         </span>
       </header>
+
+      <RobotControl />
 
       <section className="gauges">
         <TiltGauge label="Pitch" angle={pitch} color={PITCH_COLOR} />

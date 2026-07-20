@@ -95,6 +95,28 @@ To see it end-to-end: `docker compose up -d`, run the API (`dotnet run`), start 
 dashboard (`npm run dev`), then drive data with `cd simulator && dotnet run` (or the real
 ESP32 running lesson 20).
 
+## Driving the robot (lesson 21 — TB6612FNG motors)
+
+This is the **reverse** direction of the telemetry flow: commands go browser → API → broker → ESP32.
+
+```
+Browser --HTTP--> ASP.NET --AMQP--> RabbitMQ --MQTT(1883)--> ESP32 --> TB6612FNG --> motors
+```
+
+- **Endpoint:** `POST /api/robot/{device}/drive` with body `{ "command": "forward" }`.
+  Allowed commands: `forward`, `back`, `left`, `right`, `stop` (anything else → 400).
+- This is **command dispatch, not telemetry** — `RobotCommandPublisher` publishes to `amq.topic`
+  with routing key `commands.<device>.drive`; it never writes to PostgreSQL. The MQTT plugin
+  turns that key back into topic `commands/<device>/drive`, which the firmware subscribes to.
+  The `commands.*` namespace is separate from `sensors.#`, so the telemetry consumer ignores it.
+- **Dashboard:** the *Drive* panel (hold a button, or arrow keys / WASD). While a direction is
+  held the browser resends the command every 300 ms; on release it sends `stop`. The firmware has
+  a **failsafe** — if it hears nothing for 700 ms it stops the motors, so a closed tab or dropped
+  Wi-Fi can't leave the robot running.
+
+The simulator does **not** drive motors (it's a telemetry publisher only); test the drive path
+with the real ESP32 running lesson 21, or by POSTing to the endpoint (Swagger / curl).
+
 ## Where to extend next
 
 - `TelemetryConsumer.ParseReading` — the payload format (switch to JSON).
