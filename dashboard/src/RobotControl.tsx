@@ -18,7 +18,16 @@ const KEY_MAP: Record<string, DriveCommand> = {
   d: "right",
 };
 
-export function RobotControl() {
+interface RobotControlProps {
+  /**
+   * The firmware's tilt guard (metric `guard`, lesson 22) is active: the ESP32 is
+   * refusing drive commands until it's level again. We still send them — the device
+   * is the authority — but the pad shows why nothing is moving.
+   */
+  blocked?: boolean;
+}
+
+export function RobotControl({ blocked = false }: RobotControlProps) {
   const [active, setActive] = useState<DriveCommand | null>(null);
   const timer = useRef<number | null>(null);
   const activeRef = useRef<DriveCommand | null>(null);
@@ -93,10 +102,14 @@ export function RobotControl() {
     <div className="drive">
       <div className="drive__title">
         <span>Drive (hold a button, or use arrow keys / WASD)</span>
-        <span className="drive__active">{active ? active.toUpperCase() : "idle"}</span>
+        {blocked ? (
+          <span className="drive__guard">TILT GUARD — commands ignored</span>
+        ) : (
+          <span className="drive__active">{active ? active.toUpperCase() : "idle"}</span>
+        )}
       </div>
 
-      <div className="pad">
+      <div className={`pad${blocked ? " pad--blocked" : ""}`}>
         <button {...holdProps("forward")} style={{ gridArea: "up" }} aria-label="forward">▲</button>
         <button {...holdProps("left")} style={{ gridArea: "left" }} aria-label="left">◀</button>
         <button

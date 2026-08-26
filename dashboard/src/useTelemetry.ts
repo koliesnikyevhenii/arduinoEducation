@@ -32,20 +32,27 @@ interface UseTelemetry {
 
 type LatestValues = { pitch: number | null; roll: number | null; yaw: number | null };
 
+/** Tilt metrics that feed the gauges, the chart and the 3D model. */
+const TILT_METRICS = ["pitch", "roll", "yaw"];
+
 /**
  * Subscribes to the API's SignalR hub and keeps the latest pitch/roll plus a
  * rolling window of history for the given device. Pitch and roll arrive as
  * separate messages, so each message appends a point carrying the newest value
  * of both.
+ *
+ * `guard` (lesson 22) rides the same pipeline as an ordinary 0/1 metric, but the
+ * firmware publishes it only when it flips — so it's latched, not charted.
  */
 export function useTelemetry(
   apiUrl: string,
-  { device, metrics = ["pitch", "roll", "yaw"] }: UseTelemetry
+  { device, metrics = [...TILT_METRICS, "guard"] }: UseTelemetry
 ) {
   const [state, setState] = useState<ConnState>("connecting");
   const [pitch, setPitch] = useState<number | null>(null);
   const [roll, setRoll] = useState<number | null>(null);
   const [yaw, setYaw] = useState<number | null>(null);
+  const [guard, setGuard] = useState<boolean | null>(null);
   const [history, setHistory] = useState<TiltPoint[]>([]);
 
   // Newest values held in a ref so the SignalR handler (registered once) always
@@ -71,6 +78,10 @@ export function useTelemetry(
       } else if (r.metric === "yaw") {
         latest.current.yaw = r.value;
         setYaw(r.value);
+      } else if (r.metric === "guard") {
+        // Event, not a measurement: latch it and don't add a chart point.
+        setGuard(r.value !== 0);
+        return;
       }
 
       const point: TiltPoint = {
@@ -99,5 +110,5 @@ export function useTelemetry(
     };
   }, [apiUrl, device, metrics.join(",")]);
 
-  return { state, pitch, roll, yaw, history };
+  return { state, pitch, roll, yaw, guard, history };
 }

@@ -96,6 +96,19 @@ body {
   color: #38bdf8;
 }
 
+.drive__guard {
+  font-weight: 700;
+  color: #f87171;
+  letter-spacing: 0.04em;
+  animation: guard-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes guard-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
 .pad {
   display: grid;
   grid-template-areas:
@@ -118,6 +131,13 @@ body {
   user-select: none;
   touch-action: none;
   transition: background 80ms, transform 80ms;
+}
+
+/* Tilt guard active: the device is ignoring movement, so grey the pad out.
+   Kept clickable — the firmware decides, and "stop" is always honoured. */
+.pad--blocked .pad__btn {
+  opacity: 0.4;
+  border-color: #7f1d1d;
 }
 
 .pad__btn:hover {

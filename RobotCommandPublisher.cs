@@ -8,7 +8,7 @@ namespace TelemetryApi.Messaging;
 /// Publishes drive commands to the robot. This is the reverse of <see cref="TelemetryConsumer"/>:
 /// the API sends a command into RabbitMQ, the MQTT plugin turns routing key
 /// <c>commands.&lt;device&gt;.drive</c> back into MQTT topic <c>commands/&lt;device&gt;/drive</c>,
-/// and the ESP32 firmware (lesson 21) — subscribed to it — drives the motors.
+/// and the ESP32 firmware (lesson 21/22) — subscribed to it — drives the motors.
 ///
 /// NOTE: this is command dispatch, not telemetry. It only publishes to the broker and
 /// never writes to PostgreSQL, so the "API is read-only for telemetry" rule still holds.

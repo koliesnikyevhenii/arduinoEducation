@@ -71,7 +71,7 @@ The simulator publishes `esp32/pitch` and `esp32/roll` (swinging ±90°) alongsi
 room temperature/humidity series, so the pitch/roll dashboard below has live data with
 no ESP32 attached.
 
-## Real-time dashboard (Pitch / Roll — MPU6050 lesson)
+## Real-time dashboard (Pitch / Roll — MPU6050 lesson 20)
 
 The ESP32 MPU6050 lesson publishes tilt as two ordinary metrics —
 `sensors/esp32/pitch` and `sensors/esp32/roll`, each a bare number. The backend needs
@@ -116,6 +116,35 @@ Browser --HTTP--> ASP.NET --AMQP--> RabbitMQ --MQTT(1883)--> ESP32 --> TB6612FNG
 
 The simulator does **not** drive motors (it's a telemetry publisher only); test the drive path
 with the real ESP32 running lesson 21, or by POSTing to the endpoint (Swagger / curl).
+
+## Full robot (lesson 22 — drive *and* tilt in one firmware)
+
+Lesson 22 merges lessons 20 and 21 on the device: **one** ESP32 sketch publishes tilt and
+subscribes to drive commands at the same time, so you steer from the dashboard and watch the
+robot lean in the same breath. Both directions run over the same broker:
+
+```
+Browser --HTTP--> ASP.NET --AMQP--> RabbitMQ --MQTT--> ESP32 --> motors
+Browser <--SignalR-- ASP.NET <--AMQP-- RabbitMQ <--MQTT-- ESP32 <-- MPU6050
+```
+
+**The backend needed no contract change** — that's the point. Telemetry still arrives as
+`sensors.<device>.<metric>` with a bare-number body, commands still leave as
+`commands.<device>.drive`. What lesson 22 adds is one more ordinary metric:
+
+- **`guard`** — the firmware's own **tilt cutoff**: `1` while |pitch| or |roll| exceeds 45°
+  (released below 35° — hysteresis), `0` otherwise. While it's `1` the device stops the motors
+  and *ignores* movement commands (`stop` is always honoured). It rides the normal telemetry
+  pipeline as a `0`/`1` reading, so `TelemetryConsumer` ingests and broadcasts it untouched.
+- The device publishes `guard` **only when it flips** (an event), not on the 5 Hz timer the
+  angles use (a measurement stream) — so it costs a couple of rows per session, not 5/sec.
+- The dashboard latches it: the *Drive* pad greys out and shows **TILT GUARD — commands
+  ignored** instead of the active direction. `useTelemetry` returns it as `guard: boolean | null`
+  and deliberately keeps it out of the chart history.
+- `POST /api/robot/{device}/drive` still answers **202 Accepted** — we only know the command
+  reached the broker; with the tilt guard tripped the device may well decline to act on it.
+
+The simulator doesn't publish `guard`, so the badge stays dark without the real robot.
 
 ## Where to extend next
 

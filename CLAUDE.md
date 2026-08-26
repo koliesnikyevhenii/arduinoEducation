@@ -22,8 +22,9 @@ Command flow (us → device):
 `Browser --HTTP--> RobotEndpoints --AMQP--> RabbitMQ --MQTT--> ESP32 --> TB6612FNG motors`.
 
 The matching firmware lives in a **separate repo** (`../scatchesEsp/esp32-lessons`):
-lesson 19 = MQTT telemetry, lesson 20 = MPU6050 pitch/roll/yaw, lesson 21 = motor control.
-Metrics in play today: `temperature`, `humidity`, `pitch`, `roll`, `yaw`.
+lesson 19 = MQTT telemetry, lesson 20 = MPU6050 pitch/roll/yaw, lesson 21 = motor control,
+lesson 22 = both at once (drive + tilt in one sketch, plus a device-side tilt cutoff).
+Metrics in play today: `temperature`, `humidity`, `pitch`, `roll`, `yaw`, `guard`.
 
 This is a learning / pet project. Some production shortcuts are accepted on purpose and
 flagged below — don't "fix" them without checking intent.
@@ -97,6 +98,9 @@ the repo root without a matching `<Compile Remove>` / `<Content Remove>` in the 
 - **NEVER** widen the robot command allowlist without updating the firmware. Only
   `forward`/`back`/`left`/`right`/`stop` are accepted; anything else is a 400.
   (`RobotEndpoints.cs`)
+- **NEVER** treat a 202 from `/api/robot/*` as "the robot moved". It means the command
+  reached the broker; the device is the authority and may decline (lesson-22 tilt guard).
+  (`RobotEndpoints.cs`)
 
 ### Accepted pet-project shortcuts (do not "fix" silently)
 
@@ -121,6 +125,10 @@ the repo root without a matching `<Compile Remove>` / `<Content Remove>` in the 
   (`RabbitMqOptions.cs:21`)
 - **Metric** — the measured quantity on a reading, e.g. `temperature`, `humidity`.
   (`SensorReading.cs:14`)
+- **`guard`** — lesson-22 metric, `0`/`1`: the firmware's tilt cutoff is engaged and the
+  device is ignoring drive commands. An *event*, so the device publishes it only when it
+  flips (not on the 5 Hz angle timer); the dashboard latches the last value and keeps it out
+  of the chart history. Needs no special backend handling — it's just another number.
 - **Command routing key** — `commands.<device>.drive`, body a bare word
   (`forward`/`back`/`left`/`right`/`stop`). Published by `RobotCommandPublisher` into
   `amq.topic`; the MQTT plugin delivers it to the ESP32's `commands/<device>/drive`

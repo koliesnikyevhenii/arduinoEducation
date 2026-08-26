@@ -26,19 +26,21 @@ const STATUS_TEXT: Record<ConnState, string> = {
 };
 
 export function App() {
-  const { state, pitch, roll, yaw, history } = useTelemetry(API_URL, { device: DEVICE });
+  const { state, pitch, roll, yaw, guard, history } = useTelemetry(API_URL, { device: DEVICE });
 
   return (
     <div className="app">
       <header className="app__header">
-        <h1>MPU6050 — Pitch / Roll</h1>
+        <h1>Robot — drive &amp; tilt</h1>
         <span className={`status status--${state}`}>
           <span className="status__dot" />
           {STATUS_TEXT[state]}
         </span>
       </header>
 
-      <RobotControl />
+      {/* guard is the firmware's own tilt cutoff (lesson 22): while it's set the
+          ESP32 ignores drive commands, so the pad says so instead of looking broken. */}
+      <RobotControl blocked={guard === true} />
 
       <section className="gauges">
         <TiltGauge label="Pitch" angle={pitch} color={PITCH_COLOR} />

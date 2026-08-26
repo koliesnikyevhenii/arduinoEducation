@@ -18,9 +18,11 @@ builder.Services.Configure<RabbitMqOptions>(
 builder.Services.AddHostedService<TelemetryConsumer>();
 
 // --- Robot command dispatch (browser -> broker -> ESP32). Not telemetry. ---
+// Reverse direction of the consumer above; both share the amq.topic exchange but
+// live in separate routing-key namespaces (commands.* vs sensors.#).
 builder.Services.AddSingleton<RobotCommandPublisher>();
 
-// --- SignalR: pushes freshly-ingested readings (e.g. pitch/roll) to the dashboard ---
+// --- SignalR: pushes freshly-ingested readings (pitch/roll/yaw, guard) to the dashboard ---
 // camelCase so the TS client sees { device, metric, value, recordedAt }.
 builder.Services.AddSignalR()
     .AddJsonProtocol(o =>
