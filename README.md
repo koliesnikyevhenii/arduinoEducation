@@ -109,10 +109,32 @@ Browser --HTTP--> ASP.NET --AMQP--> RabbitMQ --MQTT(1883)--> ESP32 --> TB6612FNG
   with routing key `commands.<device>.drive`; it never writes to PostgreSQL. The MQTT plugin
   turns that key back into topic `commands/<device>/drive`, which the firmware subscribes to.
   The `commands.*` namespace is separate from `sensors.#`, so the telemetry consumer ignores it.
-- **Dashboard:** the *Drive* panel (hold a button, or arrow keys / WASD). While a direction is
-  held the browser resends the command every 300 ms; on release it sends `stop`. The firmware has
-  a **failsafe** — if it hears nothing for 700 ms it stops the motors, so a closed tab or dropped
-  Wi-Fi can't leave the robot running.
+- **Dashboard:** the *Drive* panel — hold a button, use arrow keys / WASD, or plug in a **game
+  controller** (see below). While a direction is held the browser resends the command every
+  300 ms; on release it sends `stop`. The firmware has a **failsafe** — if it hears nothing for
+  700 ms it stops the motors, so a closed tab or dropped Wi-Fi can't leave the robot running.
+
+### Driving with a game controller
+
+`dashboard/src/useGamepad.ts` reads a USB/Bluetooth pad through the browser **Gamepad API** and
+feeds the *same* `begin`/`end` path as the on-screen buttons, so it inherits the 300 ms keepalive
+and the failsafe for free. No API, broker or firmware change — it's another way to press the same
+buttons.
+
+- **Detection:** browsers hide gamepads until the pad sends input, so the strip under the D-pad
+  reads *"No controller"* until you **press any button on it once**. Chrome/Edge work over plain
+  `http://localhost`; Firefox exposes fewer pads and has no rumble.
+- **Mapping** — cheap DirectInput pads (a no-name "Defender Omega", say) don't use the standard
+  layout, so three sources are tried in order: the standard-mapping D-pad (buttons 12–15), a
+  **hat switch on axis 9**, then the analog sticks (axes 0/1 and 2/3, deadzone 0.5). Axis 9 is
+  only trusted as a hat once it has been seen at its out-of-range neutral value — otherwise an
+  ordinary stick axis resting at `0` would decode as a permanent "back".
+- **Buttons:** direction = drive (held), any face button (0–3) = **stop**. Diagonals resolve to
+  forward/back, since the robot only understands four discrete moves.
+- **Unknown pad?** Hit **raw input** in the strip for a live axis/button readout and press things
+  until you find yours — that's the fastest way to see what your controller actually reports.
+- The pad **buzzes** (where supported) when the lesson-22 tilt guard trips, since a driver
+  watching the robot isn't watching this panel.
 
 The simulator does **not** drive motors (it's a telemetry publisher only); test the drive path
 with the real ESP32 running lesson 21, or by POSTing to the endpoint (Swagger / curl).

@@ -23,8 +23,13 @@ Command flow (us → device):
 
 The matching firmware lives in a **separate repo** (`../scatchesEsp/esp32-lessons`):
 lesson 19 = MQTT telemetry, lesson 20 = MPU6050 pitch/roll/yaw, lesson 21 = motor control,
-lesson 22 = both at once (drive + tilt in one sketch, plus a device-side tilt cutoff).
-Metrics in play today: `temperature`, `humidity`, `pitch`, `roll`, `yaw`, `guard`.
+lesson 22 = both at once (drive + tilt in one sketch, plus a device-side tilt cutoff);
+lessons 23–26 = **ESP32-S3-CAM** (a second board — HW-679, ESP32-S3-WROOM-1-N16R8: MJPEG video, then an FPV page that
+republishes its D-pad into the same `commands/esp32/drive` topic — so nothing here had to
+change for it, and two clients can drive the robot at once).
+Metrics in play today: `temperature`, `humidity`, `pitch`, `roll`, `yaw`, `guard` from device
+`esp32`, plus `fps` and `rssi` from device `esp32cam` (the dashboard filters by device, so the
+camera's own metrics land in PostgreSQL but aren't charted).
 
 This is a learning / pet project. Some production shortcuts are accepted on purpose and
 flagged below — don't "fix" them without checking intent.
@@ -43,7 +48,9 @@ flagged below — don't "fix" them without checking intent.
   (`simulator/Program.cs`). Publishes telemetry only (incl. `pitch`/`roll`/`yaw`); it does
   **not** send drive commands.
 - **React 18 + Vite + TypeScript** dashboard in `dashboard/`, with `@microsoft/signalr`,
-  `recharts` (live chart), and `@react-three/fiber` + `three.js` (3D robot model).
+  `recharts` (live chart), and `@react-three/fiber` + `three.js` (3D robot model). Driving
+  also accepts a **game controller** via the browser Gamepad API (`useGamepad.ts`) — no
+  extra dependency, and it funnels into the same command path as the on-screen pad.
 
 ## Repo layout
 

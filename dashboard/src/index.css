@@ -159,6 +159,102 @@ body {
   background: #3a2530;
 }
 
+/* Game controller status strip under the D-pad. */
+.gamepad {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.gamepad__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #334155;
+  flex: none;
+}
+
+.gamepad__dot--on {
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+}
+
+.gamepad__id {
+  color: var(--text);
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gamepad__hint {
+  font-size: 12px;
+}
+
+.gamepad__toggle {
+  margin-left: auto;
+  font: inherit;
+  font-size: 12px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.gamepad__toggle:hover {
+  color: var(--text);
+  border-color: #334155;
+}
+
+/* Raw axis/button readout — for working out what an unknown pad reports. */
+.gamepad__raw {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #0b1424;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gamepad__axis {
+  display: inline-block;
+  min-width: 84px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gamepad__axis b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.gamepad__bit {
+  display: inline-block;
+  min-width: 22px;
+  padding: 1px 0;
+  margin-right: 4px;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+
+.gamepad__bit--on {
+  background: #38bdf8;
+  border-color: #38bdf8;
+  color: #0b1220;
+  font-weight: 700;
+}
+
 .gauges {
   display: grid;
   grid-template-columns: 1fr 1fr;
