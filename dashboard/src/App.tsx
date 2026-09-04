@@ -8,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { CameraPanel } from "./CameraPanel";
 import { CarModel } from "./CarModel";
 import { RobotControl } from "./RobotControl";
 import { TiltGauge } from "./TiltGauge";
@@ -38,65 +39,82 @@ export function App() {
         </span>
       </header>
 
-      {/* guard is the firmware's own tilt cutoff (lesson 22): while it's set the
-          ESP32 ignores drive commands, so the pad says so instead of looking broken. */}
-      <RobotControl blocked={guard === true} />
+      {/* Feed on the left, controls on the right. Stacked, the 4:3 video alone was most
+          of a screen and everything else lived below the fold — and driving by the camera
+          means watching it while your thumbs are on the pad, so the two belong side by
+          side rather than one after the other. Collapses back to one column under 1100px. */}
+      <section className="top">
+        {/* The camera is a second board (lesson 26) with its own address: the panel talks
+            to it directly for video and takes its fps/rssi off the same SignalR hub as
+            the tilt metrics. */}
+        <CameraPanel apiUrl={API_URL} />
 
-      <section className="gauges">
-        <TiltGauge label="Pitch" angle={pitch} color={PITCH_COLOR} />
-        <TiltGauge label="Roll" angle={roll} color={ROLL_COLOR} />
+        <div className="top__side">
+          {/* guard is the firmware's own tilt cutoff (lesson 22): while it's set the
+              ESP32 ignores drive commands, so the pad says so instead of looking broken. */}
+          <RobotControl blocked={guard === true} />
+
+          <section className="gauges">
+            <TiltGauge label="Pitch" angle={pitch} color={PITCH_COLOR} />
+            <TiltGauge label="Roll" angle={roll} color={ROLL_COLOR} />
+          </section>
+        </div>
       </section>
 
-      <section className="chart">
-        <ResponsiveContainer width="100%" height={280}>
-          <LineChart data={history} margin={{ top: 8, right: 16, bottom: 8, left: -16 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-            <XAxis
-              dataKey="t"
-              type="number"
-              domain={["dataMin", "dataMax"]}
-              tickFormatter={(t) => new Date(t).toLocaleTimeString()}
-              stroke="#64748b"
-              minTickGap={48}
-            />
-            <YAxis domain={[-90, 90]} ticks={[-90, -45, 0, 45, 90]} stroke="#64748b" />
-            <ReferenceLine y={0} stroke="#334155" />
-            <Tooltip
-              contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8 }}
-              labelFormatter={(t) => new Date(t as number).toLocaleTimeString()}
-              formatter={(v: number, name) => [`${v?.toFixed(1)}°`, name]}
-            />
-            <Line
-              type="monotone"
-              dataKey="pitch"
-              stroke={PITCH_COLOR}
-              dot={false}
-              isAnimationActive={false}
-              connectNulls
-            />
-            <Line
-              type="monotone"
-              dataKey="roll"
-              stroke={ROLL_COLOR}
-              dot={false}
-              isAnimationActive={false}
-              connectNulls
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </section>
+      {/* Chart and 3D model are the other two tall panels; pairing them saves another
+          screenful now that there is width to spare. */}
+      <section className="lower">
+        <section className="chart">
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={history} margin={{ top: 8, right: 16, bottom: 8, left: -16 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+              <XAxis
+                dataKey="t"
+                type="number"
+                domain={["dataMin", "dataMax"]}
+                tickFormatter={(t) => new Date(t).toLocaleTimeString()}
+                stroke="#64748b"
+                minTickGap={48}
+              />
+              <YAxis domain={[-90, 90]} ticks={[-90, -45, 0, 45, 90]} stroke="#64748b" />
+              <ReferenceLine y={0} stroke="#334155" />
+              <Tooltip
+                contentStyle={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 8 }}
+                labelFormatter={(t) => new Date(t as number).toLocaleTimeString()}
+                formatter={(v: number, name) => [`${v?.toFixed(1)}°`, name]}
+              />
+              <Line
+                type="monotone"
+                dataKey="pitch"
+                stroke={PITCH_COLOR}
+                dot={false}
+                isAnimationActive={false}
+                connectNulls
+              />
+              <Line
+                type="monotone"
+                dataKey="roll"
+                stroke={ROLL_COLOR}
+                dot={false}
+                isAnimationActive={false}
+                connectNulls
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </section>
 
-      <section className="model">
-        <div className="model__title">
-          <span>Robot orientation (drag to orbit)</span>
-          <span className="model__heading">
-            heading {yaw !== null ? `${yaw.toFixed(0)}°` : "—"}
-            <span className="model__hint"> · gyro-only, drifts over time</span>
-          </span>
-        </div>
-        <div className="model__canvas">
-          <CarModel pitch={pitch} roll={roll} yaw={yaw} />
-        </div>
+        <section className="model">
+          <div className="model__title">
+            <span>Robot orientation (drag to orbit)</span>
+            <span className="model__heading">
+              heading {yaw !== null ? `${yaw.toFixed(0)}°` : "—"}
+              <span className="model__hint"> · gyro-only, drifts over time</span>
+            </span>
+          </div>
+          <div className="model__canvas">
+            <CarModel pitch={pitch} roll={roll} yaw={yaw} />
+          </div>
+        </section>
       </section>
 
       <footer className="app__footer">

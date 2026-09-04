@@ -25,8 +25,11 @@ The matching firmware lives in a **separate repo** (`../scatchesEsp/esp32-lesson
 lesson 19 = MQTT telemetry, lesson 20 = MPU6050 pitch/roll/yaw, lesson 21 = motor control,
 lesson 22 = both at once (drive + tilt in one sketch, plus a device-side tilt cutoff);
 lessons 23–26 = **ESP32-S3-CAM** (a second board — HW-679, ESP32-S3-WROOM-1-N16R8: MJPEG video, then an FPV page that
-republishes its D-pad into the same `commands/esp32/drive` topic — so nothing here had to
-change for it, and two clients can drive the robot at once).
+republishes its D-pad into the same `commands/esp32/drive` topic — so **no backend change** was
+needed for it, and two clients can drive the robot at once). The dashboard now shows that
+camera's feed inline (`dashboard/src/CameraPanel.tsx`): video comes straight from the board
+over MJPEG, while its `fps`/`rssi` ride the existing SignalR pipeline — still no API, broker
+or schema change.
 Metrics in play today: `temperature`, `humidity`, `pitch`, `roll`, `yaw`, `guard` from device
 `esp32`, plus `fps` and `rssi` from device `esp32cam` (the dashboard filters by device, so the
 camera's own metrics land in PostgreSQL but aren't charted).
@@ -51,6 +54,8 @@ flagged below — don't "fix" them without checking intent.
   `recharts` (live chart), and `@react-three/fiber` + `three.js` (3D robot model). Driving
   also accepts a **game controller** via the browser Gamepad API (`useGamepad.ts`) — no
   extra dependency, and it funnels into the same command path as the on-screen pad.
+  The camera feed is an `<img>` on the board's `:81/stream` (`CameraPanel.tsx`) — MJPEG in
+  an image element, so no video library and no CORS involved.
 
 ## Repo layout
 

@@ -2,6 +2,24 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { sendDrive, type DriveCommand } from "./robotApi";
 import { rumbleGamepads, useGamepad } from "./useGamepad";
 
+/**
+ * Whether this controller's axes run the other way round — see `FLIP` in useGamepad.
+ * The default is a property of the pad plugged into this machine, so it lives in
+ * `dashboard/.env` (`VITE_PAD_INVERT`) rather than being hard-coded, and the strip
+ * under the pad can flip it at runtime; the choice sticks in localStorage.
+ */
+const PAD_INVERT_DEFAULT = import.meta.env.VITE_PAD_INVERT !== "false";
+const PAD_INVERT_KEY = "pad.invert";
+
+function readPadInvert(): boolean {
+  try {
+    const stored = localStorage.getItem(PAD_INVERT_KEY);
+    return stored === null ? PAD_INVERT_DEFAULT : stored === "true";
+  } catch {
+    return PAD_INVERT_DEFAULT; // storage blocked — the env default still applies
+  }
+}
+
 // While a direction is held we resend it on this cadence (keepalive). The firmware
 // stops the motors if it hears nothing for FAILSAFE_MS (700ms), so a closed tab or
 // dropped Wi-Fi halts the robot instead of letting it run away.
@@ -38,6 +56,7 @@ interface RobotControlProps {
 export function RobotControl({ blocked = false }: RobotControlProps) {
   const [active, setActive] = useState<DriveCommand | null>(null);
   const [showMapping, setShowMapping] = useState(false);
+  const [padInvert, setPadInvert] = useState(readPadInvert);
   const timer = useRef<number | null>(null);
   const activeRef = useRef<DriveCommand | null>(null);
   const sourceRef = useRef<Source | null>(null);
@@ -113,7 +132,23 @@ export function RobotControl({ blocked = false }: RobotControlProps) {
     onRelease: () => end("pad"),
     onStop: stopNow,
     debug: showMapping,
+    invert: padInvert,
   });
+
+  // Flipping the axes takes effect on the next poll; if a direction is being held
+  // right now, let go of it first so the robot doesn't keep the pre-flip command.
+  const toggleInvert = useCallback(() => {
+    setPadInvert((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(PAD_INVERT_KEY, String(next));
+      } catch {
+        /* remembering is a nicety; the flip itself still works this session */
+      }
+      return next;
+    });
+    end("pad");
+  }, [end]);
 
   // Buzz the pad when the firmware's tilt guard engages — a driver looking at the
   // robot (or at the FPV feed) isn't looking at this panel.
@@ -182,7 +217,15 @@ export function RobotControl({ blocked = false }: RobotControlProps) {
         )}
         <button
           type="button"
-          className="gamepad__toggle"
+          className={`gamepad__toggle${padInvert ? " gamepad__toggle--on" : ""}`}
+          onClick={toggleInvert}
+          title="Flip the pad's directions end for end, for a controller whose axes run backwards"
+        >
+          axes: {padInvert ? "flipped" : "normal"}
+        </button>
+        <button
+          type="button"
+          className="gamepad__toggle gamepad__toggle--raw"
           onClick={() => setShowMapping((v) => !v)}
         >
           {showMapping ? "hide raw input" : "raw input"}

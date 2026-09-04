@@ -24,6 +24,22 @@ const HAT_NEUTRAL_MIN = 1.05; // above this the hat is centred, not pointing any
 // How often the raw axes/buttons readout re-renders while the mapping panel is open.
 const DEBUG_INTERVAL_MS = 100;
 
+/**
+ * Turns a decoded direction into its opposite. Cheap DirectInput pads disagree about
+ * which end of an axis is "up" — some report a hat starting at its bottom position,
+ * some hand out an inverted stick Y — and either way the whole decode comes out
+ * rotated by 180 degrees: pushing up drives back, and left turns right. One flip at
+ * the end fixes both halves, which is why this is a single switch and not one per
+ * axis. See the `invert` option.
+ */
+const FLIP: Record<DriveCommand, DriveCommand> = {
+  forward: "back",
+  back: "forward",
+  left: "right",
+  right: "left",
+  stop: "stop",
+};
+
 export interface GamepadState {
   connected: boolean;
   /** The pad's self-reported name, e.g. "USB Gamepad (Vendor: 0079 Product: 0006)". */
@@ -44,6 +60,12 @@ interface UseGamepadOptions {
   onStop: () => void;
   /** Populate `axes`/`buttons` for the mapping panel. Off by default; it re-renders. */
   debug?: boolean;
+  /**
+   * Flip every decoded direction end for end, for a pad whose axes run the other way.
+   * Defaults from `VITE_PAD_INVERT`; the Drive panel exposes it as a toggle because
+   * it is a property of the controller, not of the robot.
+   */
+  invert?: boolean;
 }
 
 const IDLE: GamepadState = { connected: false, id: null, command: null, axes: [], buttons: [] };
@@ -136,6 +158,7 @@ export function useGamepad({
   onRelease,
   onStop,
   debug = false,
+  invert = false,
 }: UseGamepadOptions): GamepadState {
   const [state, setState] = useState<GamepadState>(IDLE);
 
@@ -145,6 +168,8 @@ export function useGamepad({
   handlers.current = { onCommand, onRelease, onStop };
   const debugRef = useRef(debug);
   debugRef.current = debug;
+  const invertRef = useRef(invert);
+  invertRef.current = invert;
 
   // What the last setState published, so the loop can skip redundant renders
   // without depending on `state` (which would restart it).
@@ -175,7 +200,8 @@ export function useGamepad({
         return;
       }
 
-      const command = readDirection(gp, hatPads);
+      const decoded = readDirection(gp, hatPads);
+      const command = decoded && invertRef.current ? FLIP[decoded] : decoded;
       const stop = stopPressed(gp);
 
       if (command !== lastCommand) {

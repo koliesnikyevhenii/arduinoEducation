@@ -19,9 +19,59 @@ body {
 }
 
 .app {
-  max-width: 900px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 24px 20px 40px;
+}
+
+/* Two panel rows instead of one tall stack: the 4:3 camera plus the pad plus the chart
+   plus the 3D canvas ran to well over two screens in a single 900px column. `minmax(0,
+   ...)` on every track is what keeps the chart honest — a bare `1fr` is min-content-wide,
+   and recharts' ResponsiveContainer would push the column open instead of shrinking. */
+.top,
+.lower {
+  display: grid;
+  gap: 20px;
+  align-items: start;
+  margin-bottom: 24px;
+}
+
+/* Video gets the larger share; the right column stacks the pad over the gauges and
+   comes out about as tall, so neither side leaves a gap. */
+.top {
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+}
+
+.lower {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  margin-bottom: 0;
+}
+
+.top__side {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Panels bring their own bottom margins from the stacked layout; inside a grid the gap
+   does that job, so zero them here rather than editing each panel's own rule. */
+.top > .cam,
+.top__side > .gauges,
+.lower > .model {
+  margin-bottom: 0;
+  margin-top: 0;
+}
+
+.top__side > .drive {
+  margin-bottom: 20px;
+}
+
+/* One column again when there isn't width for two — the panels keep their own margins
+   in that mode, so the grid gap is all that changes. */
+@media (max-width: 1100px) {
+  .top,
+  .lower {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .app__header {
@@ -212,6 +262,17 @@ body {
   border-color: #334155;
 }
 
+/* Both toggles sit as one group on the right, so only the first takes the auto margin. */
+.gamepad__toggle--raw {
+  margin-left: 0;
+}
+
+/* Flipped axes are a deliberate, non-default state — say so rather than looking broken. */
+.gamepad__toggle--on {
+  color: #38bdf8;
+  border-color: #1e4b66;
+}
+
 /* Raw axis/button readout — for working out what an unknown pad reports. */
 .gamepad__raw {
   margin-top: 10px;
@@ -253,6 +314,160 @@ body {
   border-color: #38bdf8;
   color: #0b1220;
   font-weight: 700;
+}
+
+/* ---- Camera panel (ESP32-CAM, lesson 26) --------------------------------- */
+
+.cam {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 24px;
+}
+
+.cam__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+.cam__stats {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: normal;
+  text-transform: none;
+  color: #cbd5e1;
+}
+
+.cam__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #334155;
+  flex: none;
+}
+
+.cam__dot--on {
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+}
+
+.cam__rssi {
+  color: var(--muted);
+}
+
+/* Fixed 4:3 box — the OV2640/GC2145 frame is 4:3, and reserving the height keeps the
+   page from jumping when the stream drops out and the placeholder takes over. */
+.cam__frame {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 10px;
+  background: radial-gradient(circle at 50% 30%, #101c30, #0b1220 70%);
+}
+
+.cam__video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.cam__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  max-width: 420px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.cam__placeholder b {
+  color: #f87171;
+  font-size: 14px;
+}
+
+.cam__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  font-size: 13px;
+}
+
+.cam__btn {
+  font: inherit;
+  font-size: 12px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.cam__btn:hover {
+  color: var(--text);
+  border-color: #334155;
+}
+
+/* Watchdog counter. Deliberately visible: a stream that keeps re-opening itself is a
+   symptom worth seeing, not something to hide behind a silent retry. */
+.cam__recovery {
+  font-size: 12px;
+  color: #eab308;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The address is a button so it reads as "click to change" without extra chrome. */
+.cam__addr {
+  margin-left: auto;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 12px;
+  color: #cbd5e1;
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+
+.cam__addr:hover {
+  border-color: #334155;
+  border-style: solid;
+}
+
+.cam__addr-port {
+  color: var(--muted);
+}
+
+.cam__input {
+  margin-left: auto;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 12px;
+  color: var(--text);
+  background: #0b1424;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 4px 10px;
+  min-width: 200px;
 }
 
 .gauges {

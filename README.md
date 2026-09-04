@@ -91,6 +91,14 @@ The dashboard reads the API base URL from `dashboard/.env` (`VITE_API_URL`, defa
 policy, which allows origin `http://localhost:5173` **with credentials** (required for the
 SignalR WebSocket handshake).
 
+`dashboard/.env` is git-ignored; every setting in it is documented inline there:
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `VITE_API_URL` | `http://localhost:54344` | API + SignalR hub base URL |
+| `VITE_CAM_URL` | `http://192.168.0.12` | ESP32-CAM address for the video panel (below) |
+| `VITE_PAD_INVERT` | `true` | Flip the game controller's directions (below) |
+
 To see it end-to-end: `docker compose up -d`, run the API (`dotnet run`), start the
 dashboard (`npm run dev`), then drive data with `cd simulator && dotnet run` (or the real
 ESP32 running lesson 20).
@@ -131,6 +139,13 @@ buttons.
   ordinary stick axis resting at `0` would decode as a permanent "back".
 - **Buttons:** direction = drive (held), any face button (0–3) = **stop**. Diagonals resolve to
   forward/back, since the robot only understands four discrete moves.
+- **Axes backwards?** Cheap pads disagree about which end of an axis is "up", and a pad that
+  reports it the other way comes out rotated 180 degrees — push up and the robot reverses, and
+  the turns are mirrored along with it. The **axes: flipped / normal** toggle in the strip
+  flips every decoded direction end for end (one switch, because both halves invert together);
+  the choice sticks in `localStorage`, and `VITE_PAD_INVERT` sets the default. This is a
+  property of the controller, so it happens in `useGamepad.ts` — the API, broker and firmware
+  never see it.
 - **Unknown pad?** Hit **raw input** in the strip for a live axis/button readout and press things
   until you find yours — that's the fastest way to see what your controller actually reports.
 - The pad **buzzes** (where supported) when the lesson-22 tilt guard trips, since a driver
@@ -158,6 +173,11 @@ Browser <--SignalR-- ASP.NET <--AMQP-- RabbitMQ <--MQTT-- ESP32 <-- MPU6050
   (released below 35° — hysteresis), `0` otherwise. While it's `1` the device stops the motors
   and *ignores* movement commands (`stop` is always honoured). It rides the normal telemetry
   pipeline as a `0`/`1` reading, so `TelemetryConsumer` ingests and broadcasts it untouched.
+  It arms only once that tilt has **held for 300 ms** *and* the accelerometer is trustworthy
+  (|a| ≈ 1 g). Both filters exist because the angles are derived from the acceleration vector:
+  without them the motors' own starting jolt read as 45–48° on a level floor, and the guard cut
+  the motors it had just started — the robot twitched and stood still. Nothing on this side
+  changed for that fix; it just means far fewer `guard` rows.
 - The device publishes `guard` **only when it flips** (an event), not on the 5 Hz timer the
   angles use (a measurement stream) — so it costs a couple of rows per session, not 5/sec.
 - The dashboard latches it: the *Drive* pad greys out and shows **TILT GUARD — commands
@@ -167,6 +187,36 @@ Browser <--SignalR-- ASP.NET <--AMQP-- RabbitMQ <--MQTT-- ESP32 <-- MPU6050
   reached the broker; with the tilt guard tripped the device may well decline to act on it.
 
 The simulator doesn't publish `guard`, so the badge stays dark without the real robot.
+
+## Camera in the dashboard (lesson 26 — ESP32-S3-CAM)
+
+The FPV camera is a **second board** with its own IP, and the dashboard shows its video in
+the same tab as the drive pad and the tilt gauges (`dashboard/src/CameraPanel.tsx`):
+
+```
+Browser <--MJPEG :81/stream-- ESP32-CAM          (video, straight from the camera)
+Browser <--SignalR-- ASP.NET <--AMQP-- RabbitMQ <--MQTT-- ESP32-CAM   (its fps / rssi)
+```
+
+- **Video** is a plain `<img>` pointed at the camera's second HTTP server, `:81/stream`.
+  The browser holds the `multipart/x-mixed-replace` response open and repaints on each part —
+  no library, no canvas, no `fetch`. An image is allowed to be cross-origin, so **CORS never
+  comes into it**; the firmware's `Access-Control-Allow-Origin: *` on `/stream` only matters
+  to callers that want to read the bytes.
+- **fps / rssi** in the panel header come off the **SignalR hub**, not from the camera: lesson 26
+  already publishes them as ordinary metrics under device `esp32cam`, so they ride the normal
+  pipeline into PostgreSQL and out to the browser. Nothing was added to the backend for this.
+  (The camera's own `/stats` endpoint sets no CORS header, so fetching *that* from the dev
+  origin would be blocked — the hub sidesteps the problem entirely.)
+- **The camera serves one MJPEG client at a time.** Open its own FPV page at
+  `http://<cam-ip>/` while the dashboard panel is streaming and the second viewer gets
+  nothing. That's what **pause** is for — it closes the stream and hands the camera's CPU and
+  Wi-Fi back, which matters because the same board also republishes drive commands.
+- **The address is a DHCP lease and moves.** `VITE_CAM_URL` sets the default; clicking it in
+  the panel retypes it without a rebuild and remembers it in `localStorage`. Give the plain
+  host (`http://192.168.0.12`) — the panel derives `:81/stream` itself.
+- "Offline" is decided by the fps heartbeat rather than by the `<img>`: a dead MJPEG stream
+  usually just stops repainting without firing an error.
 
 ## Where to extend next
 
